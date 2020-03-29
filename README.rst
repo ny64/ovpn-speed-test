@@ -1,0 +1,21 @@
+ovpn-speed-test
+===============
+
+OpenVPN Speedtest
+-----------------
+
+Wack-ass Python3 script to rank your openvpn configuration files 
+by download speed. Put them all in a folder and get the 
+download speed stored into a text file. Only works for linux rn.
+
+
+Dependencies
+------------
+
+openvpn
+~~~~~~~~~~~~~
+
+::
+
+    apt-get install openvpn
+
