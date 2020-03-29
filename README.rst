@@ -15,17 +15,28 @@ Dependencies
 ------------
 
 openvpn
-~~~~~~~~~~~~~
+~~~~~~~
 
 ::
 
     apt-get install openvpn
 
 
+<<<<<<< HEAD
+speedtest-cli
+~~~~~~~~~~~~~
+
+::
+
+    pip install speedtest-cli
+
+
+=======
 Installation
 ------------
 
 Clone it, use it.
+>>>>>>> e8bb1904ed4487daed35e148d86163c017861567
 
 Usage
 -----
