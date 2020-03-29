@@ -48,7 +48,7 @@ def fileIsConfig(f):
         return False
 
 
-# Ask for openvpn configuration files and store them seperatly
+# Get openvpn configuration files and store them seperatly
 # [string] path: path to config folder
 # [string] prefix: file prefix that files need to start with
 def getConfigFiles(path, prefix):
@@ -108,7 +108,7 @@ call(['mkdir', tmpConfigDir], stdout=PIPE, stderr=PIPE)
 call(['rm', tmpConfigDir, '/*'], stdout=PIPE, stderr=PIPE)
 
 # Get sudo user privilege (Using call to get the sudo prompt)
-print('\nStop all openvpn connections...\n')
+print('\nStopping all openvpn connections...\n')
 print('Warning: You need sudo privileges to start openvpn.')
 call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
 
@@ -164,7 +164,7 @@ input('\nPress ENTER to start testing (ET: ' +
 # Connect to vpn server
 for f in configFiles:
 
-    print('\nConnect to ' + f + '...')
+    print('\nConnecting to ' + f + '...')
 
     # Add user authentication file to config file
     if usesAuth:
