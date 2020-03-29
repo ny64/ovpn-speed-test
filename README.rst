@@ -22,6 +22,11 @@ openvpn
     apt-get install openvpn
 
 
+Installation
+------------
+
+Clone it, use it.
+
 Usage
 -----
 
