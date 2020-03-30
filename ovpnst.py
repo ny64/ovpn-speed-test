@@ -161,6 +161,8 @@ resultsFile.write('\n\n--- ' + str(datetime.now()) + ' ---')
 input('\nPress ENTER to start testing (ET: ' +
       str(len(configFiles) * 15) + 'sec)...')
 
+authCorr = False
+
 # Connect to vpn server
 for f in configFiles:
 
@@ -176,29 +178,43 @@ for f in configFiles:
     Popen('sudo openvpn ' + rp + tmpConfigDir + '/' + f, shell=True,
           stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-    # Check if public ip has changed
     newIP = ip
-    internetWorks = False
-    isError = False
-    i = 0
+    internetWorks = isError = False
+    i = errCocde  = 0
+
+    # Check if connected successfully to server
     while (newIP == ip or not internetWorks):
         time.sleep(3)
-        newIP = get('https://api.ipify.org').text
         internetWorks = checkInternetConnection()
+        if not internetWorks:
+            continue
+        try:
+            newIP = get('https://api.ipify.org').text
+        except:
+            isError = True
+            errCode = 1
+            break
 
         # Set error after 18 seconds
         i += 1
         if i >= 6:
             isError = True
+            errCode = 2
             break
 
     # Cancel progress if vpn connection won't work
     if isError:
-        print('An Error occured. Skipping... \n' +
-              'Make sure your username and password are correct if needed.')
+        em = 'Connection failed (' + str(errCode) + '). Skipping...'
+        if usesAuth and not authCorr:
+            em += '\nMake sure your username and password are correct.'
+        print(em)
+
         # Stop any openvpn process
         call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
         continue
+
+    # Var for checking if any connection could already be established
+    authCorr = True
 
     print('Testing download...')
 
@@ -217,6 +233,7 @@ for f in configFiles:
 
     # Stop any openvpn process
     call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
+    time.sleep(1)
 
 
 print('\nResults were written into the results.txt.')
