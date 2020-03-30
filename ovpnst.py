@@ -13,10 +13,93 @@ import urllib.request
 rp = os.path.realpath(__file__).strip(__file__)
 
 
+# Determine download/upload speed
+# [String] f: filename
+# [Int] t: type of speedtest
+# [List] return: List with detected speeds
+def getTimes(f, t):
+    threads = None
+    dlS = ulS = False
+
+    if t == 3:
+        print('Testing download...')
+        dlS = st.download(threads=threads)
+        print('Testing upload...')
+        ulS = st.upload(threads=threads)
+    elif t == 1:
+        print('Testing download...')
+        dlS = st.download(threads=threads)
+    elif t == 2:
+        print('Testing upload...')
+        ulS = st.upload(threads=threads)
+    else:
+        return False
+
+    return [dlS, ulS]
+
+
 # Calculate bits to MBytes
+# [Float] bits
+# [String] return: Readable string
 def b2MB(bits):
     bits = bits * 0.00000011921
     return '%.2f' % bits + ' MB/s'
+
+
+# Write results file header
+def writeResultsHeader():
+    rf = open(rp + 'results.txt', 'a')
+    rf.write('\n_________________ ' + str(datetime.now())
+             + ' _________________')
+    rf.write('\nFilename..............................')
+    rf.write('....Download')
+    rf.write('......Upload')
+    rf.close()
+
+
+# Write speedtest results to file
+# [string] f: Config file name
+# [List] times: Download/Upload times
+def writeResults(f, times):
+    rf = open(rp + 'results.txt', 'a')
+    rf.write('\n' + f)
+    i = 0
+
+    # Check if filename is too long
+    if len(f) > 38:
+        f = f[:38]
+
+    # Add spacer
+    while i < 40 - len(f):
+        rf.write('.')
+        i += 1
+
+    # Write download time
+    if times[0]:
+        op = b2MB(times[0])
+        i = 1
+        while i < 11 - len(op):
+            rf.write('.')
+            i += 1
+        rf.write(op)
+    else:
+        rf.write('.......N/A')
+
+    # Add spacer
+    rf.write('..')
+
+    # Write upload time
+    if times[1]:
+        op = b2MB(times[1])
+        i = 1
+        while i < 11 - len(op):
+            rf.write('.')
+            i += 1
+        rf.write(op)
+    else:
+        rf.write('.......N/A')
+
+    rf.close()
 
 
 # Check if internet connection works
@@ -88,15 +171,27 @@ def getConfigFiles(path, prefix):
 
 
 # Create authentication file
+# [string] uname: Username
+# [string] pwd: Password
 def createAuthConfig(uname, pwd):
     f = open(rp + 'user_auth.conf', 'w')
     f.write(uname + '\n' + pwd)
     f.close()
 
+# Ask in which way the servers are beeing tested
+print('What do you want to test?')
+print('(1) Only download')
+print('(2) Only upload')
+print('(3) Both download and upload')
+tests = 0
+while tests < 1 or tests > 3:
+    try:
+        tests = int(input('Please enter: '))
+    except ValueError:
+        print('Please enter a valid number.')
 
 # Speedtest API settings
 print('Configuring speedtest parameters...')
-threads = None
 st = speedtest.Speedtest()
 servers = []
 st.get_servers(servers)
@@ -132,7 +227,6 @@ while not configFiles:
 
     configFiles = getConfigFiles(path, prefix)
 
-
 # Ask for vpn server authentication if needed
 na = input('Do you need authentication for your vpn server? [Y/n]: ')
 if na.lower() == 'y' or na == '':
@@ -154,8 +248,7 @@ else:
 ip = get('https://api.ipify.org').text
 
 # Write new entry for results.txt
-resultsFile = open(rp + 'results.txt', 'a')
-resultsFile.write('\n\n--- ' + str(datetime.now()) + ' ---')
+writeResultsHeader()
 
 # Ask for user input to start test
 input('\nPress ENTER to start testing (ET: ' +
@@ -216,20 +309,14 @@ for f in configFiles:
     # Var for checking if any connection could already be established
     authCorr = True
 
-    print('Testing download...')
-
     # Get download speed
-    downSpeed = st.download(threads=threads)
-    print('-> ' + b2MB(downSpeed))
-    resultsFile.write('\n' + f)
-    i = 0
-    if len(f) > 38:
-        resultsFile.write('..')
-    else:
-        while i < 40 - len(f):
-            resultsFile.write('.')
-            i += 1
-    resultsFile.write(b2MB(downSpeed))
+    times = getTimes(f, tests)
+    if times[0]:
+        print('-> Download: ' + b2MB(times[0]))
+    if times[1]:
+        print('-> Upload: ' + b2MB(times[1]))
+
+    writeResults(f, times)
 
     # Stop any openvpn process
     call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
@@ -239,6 +326,5 @@ for f in configFiles:
 print('\nResults were written into the results.txt.')
 
 # Clean up
-resultsFile.close()
 call(['rm', rp + 'user_auth.conf'])
 call(['rm', '-rf', rp + 'ovpn_config_files'])
