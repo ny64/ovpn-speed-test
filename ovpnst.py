@@ -3,7 +3,6 @@ import getpass
 import os
 from os import listdir
 from os.path import isfile, join
-from requests import get
 import speedtest
 from subprocess import call, PIPE, Popen
 import time
@@ -205,7 +204,8 @@ call(['rm', tmpConfigDir, '/*'], stdout=PIPE, stderr=PIPE)
 # Get sudo user privilege (Using call to get the sudo prompt)
 print('\nStopping all openvpn connections...\n')
 print('Warning: You need sudo privileges to start openvpn.')
-call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
+call(['sudo', 'pkill', '-SIGTERM', '-f', 'openvpn'])
+#call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
 
 # Ask for path to search for config files
 configFiles = False
@@ -244,9 +244,6 @@ if na.lower() == 'y' or na == '':
 else:
     usesAuth = False
 
-# Get current public IP
-ip = get('https://api.ipify.org').text
-
 # Write new entry for results.txt
 writeResultsHeader()
 
@@ -271,28 +268,19 @@ for f in configFiles:
     Popen('sudo openvpn ' + rp + tmpConfigDir + '/' + f, shell=True,
           stdin=None, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-    newIP = ip
     internetWorks = isError = False
     i = errCocde  = 0
 
     # Check if connected successfully to server
-    while (newIP == ip or not internetWorks):
+    while (not internetWorks):
         time.sleep(3)
         internetWorks = checkInternetConnection()
-        if not internetWorks:
-            continue
-        try:
-            newIP = get('https://api.ipify.org').text
-        except:
-            isError = True
-            errCode = 1
-            break
 
         # Set error after 18 seconds
         i += 1
         if i >= 6:
             isError = True
-            errCode = 2
+            errCode = 1
             break
 
     # Cancel progress if vpn connection won't work
@@ -303,7 +291,8 @@ for f in configFiles:
         print(em)
 
         # Stop any openvpn process
-        call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
+        call(['sudo', 'pkill', '-SIGTERM', '-f', 'openvpn'])
+        #call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
         continue
 
     # Var for checking if any connection could already be established
@@ -319,7 +308,8 @@ for f in configFiles:
     writeResults(f, times)
 
     # Stop any openvpn process
-    call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
+    call(['sudo', 'pkill', '-SIGTERM', '-f', 'openvpn'])
+    #call(['sudo', 'killall', 'openvpn'], stderr=PIPE)
     time.sleep(1)
 
 
